@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import re
 
 def app():
     load_dotenv()
@@ -20,8 +21,14 @@ def app():
             st.write('Tabela gerada com sucesso:')
             st.dataframe(df)
             enviar_email = st.text_input('Escreva seu email para enviar as informações da nota fiscal')
+            email_padrao = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+            
             
             if st.button('Clique aqui para receber o email'):
+                if not re.match(email_padrao, enviar_email):
+                    st.warning('E-mail inválido.')
+                    return
+                
                 html_df = df.to_html()
                 smtp_server = 'smtp.gmail.com'
                 smtp_port = 587
@@ -30,7 +37,7 @@ def app():
 
                 # Compondo o e-mail
                 msg = MIMEMultipart()
-                msg['Subject'] = 'Parabéns! Você foi aprovado na nossa escola!'
+                msg['Subject'] = 'Segue relatório da nota fiscal'
                 msg['From'] = sender_email
                 msg['To'] = enviar_email
 
