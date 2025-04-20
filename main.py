@@ -12,15 +12,18 @@ def app():
     load_dotenv()
     st.header('Sistema de Leitura XML', divider=True)
     st.markdown('#### Adicione Notas Fiscais do padrão Danfe')
-    arquivo = st.file_uploader("Selecione Notas Fiscais do padrão XML da Danfe", type=['xml'])
-
+    arquivos = st.file_uploader("Selecione Notas Fiscais do padrão XML da Danfe", type=['xml'], accept_multiple_files=True)
+    df_final_danfe = pd.DataFrame()
     try:
-        if arquivo:
-            dicionario = ler_xml_danfe(arquivo)
-            df = pd.DataFrame.from_dict(dicionario)
+        if arquivos:
+            for arquivo in arquivos:
+                dicionario = ler_xml_danfe(arquivo)
+                df = pd.DataFrame.from_dict(dicionario)
+                df_final_danfe = df_final_danfe._append(df)
+            
             st.write('Tabela gerada com sucesso:')
-            st.dataframe(df)
-            enviar_email = st.text_input('Escreva seu email para enviar as informações da nota fiscal')
+            st.dataframe(df_final_danfe)
+            enviar_email = st.text_input('Escreva seu email para enviar as informações da nota fiscal', key='input_email')
             email_padrao = r'^[\w\.-]+@[\w\.-]+\.\w+$'
             
             
@@ -29,7 +32,7 @@ def app():
                     st.warning('E-mail inválido.')
                     return
                 
-                html_df = df.to_html()
+                html_df = df_final_danfe.to_html()
                 smtp_server = 'smtp.gmail.com'
                 smtp_port = 587
                 sender_email = os.environ["email"]
@@ -88,9 +91,12 @@ def app():
                         smtp.login(sender_email, sender_password)
                         smtp.send_message(msg)
                         st.success('Email enviado com sucesso!')
-                except:
+                except Exception as e:
                     st.warning('Erro ao envio do email.')
-    except:
+                    print({e})
+                    
+    except Exception as e:
+        print(f'Erro: {e}')
         st.error("Não foi possível ler sua Nota Fiscal.")
         st.error("Verifique se sua nota tem o padrão da Danfe.")
 
